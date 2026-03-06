@@ -250,9 +250,33 @@ static const authz_provider authz_sspi_valid_provider = {
 	NULL,
 };
 
+/*
+ * Stub authn_provider for AuthType NTLM.
+ * Apache 2.4 mod_authn_core throws AH01796 if no provider is registered
+ * for the configured AuthType. The actual NTLM challenge-response is handled
+ * by the check_authn hook (authenticate_sspi_user), not via this provider.
+ */
+static authn_status ntlm_authn_check_password(request_rec *r, const char *user,
+					       const char *password)
+{
+	return AUTH_USER_NOT_FOUND;
+}
+
+static const authn_provider authn_ntlm_provider = {
+	&ntlm_authn_check_password,
+	NULL,
+};
+
 /* API hooks as specified in Apache 2.4 module development */
 static void register_hooks(apr_pool_t *p)
 {
+	/* Register NTLM as a valid AuthType so mod_authn_core does not
+	   throw AH01796 before our check_authn hook gets a chance to run. */
+	ap_register_auth_provider(p, AUTHN_PROVIDER_GROUP, "ntlm",
+				AUTHN_PROVIDER_VERSION,
+				&authn_ntlm_provider,
+				AP_AUTH_INTERNAL_PER_CONF);
+
 	/* Register authorization provider */
 	ap_hook_check_authn(authenticate_sspi_user, NULL, NULL, APR_HOOK_MIDDLE,
 				AP_AUTH_INTERNAL_PER_CONF);

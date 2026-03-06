@@ -623,9 +623,9 @@ int authenticate_sspi_user(request_rec *r)
 	const char *current_auth;
 	int res;
 
-	/* is SSPI authentication supported? */
+	/* is NTLM authentication supported? */
 	current_auth = ap_auth_type(r);
-	if (!current_auth || strcasecmp(current_auth, "SSPI")) {
+	if (!current_auth || strcasecmp(current_auth, "NTLM")) {
 		return DECLINED;
 	}
 
